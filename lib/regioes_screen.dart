@@ -1,10 +1,43 @@
-
 import 'package:flutter/material.dart';
-import 'detalhe_regiao_screen.dart';
 
-class RegioesScreen extends StatelessWidget {
+import 'api/regiao_service.dart';
+import 'detalhe_regiao_screen.dart';
+import 'models/regiao.dart';
+import 'widgets/erro_com_retentativa.dart';
+
+class RegioesScreen extends StatefulWidget {
   const RegioesScreen({super.key});
 
+  @override
+  State<RegioesScreen> createState() => _RegioesScreenState();
+}
+
+class _RegioesScreenState extends State<RegioesScreen> {
+  late Future<List<Regiao>> _futuro;
+
+  @override
+  void initState() {
+    super.initState();
+    _futuro = RegiaoService.listar();
+  }
+
+  void _tentarNovamente() {
+    setState(() {
+      _futuro = RegiaoService.listar();
+    });
+  }
+
+  Future<void> _atualizar() async {
+    final novo = RegiaoService.listar();
+    setState(() {
+      _futuro = novo;
+    });
+    try {
+      await novo;
+    } catch (_) {
+      // o erro aparece no FutureBuilder
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -16,68 +49,65 @@ class RegioesScreen extends StatelessWidget {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          const Text(
-            'Acompanhe os níveis de risco das regiões.',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF111827),
-            ),
-          ),
+      body: RefreshIndicator(
+        onRefresh: _atualizar,
+        child: FutureBuilder<List<Regiao>>(
+          future: _futuro,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState != ConnectionState.done) {
+              return ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: const [
+                  SizedBox(height: 200),
+                  Center(child: CircularProgressIndicator()),
+                ],
+              );
+            }
 
-          const SizedBox(height: 20),
+            if (snapshot.hasError) {
+              return ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: [
+                  ErroComRetentativa(
+                    erro: snapshot.error!,
+                    aoTentarNovamente: _tentarNovamente,
+                  ),
+                ],
+              );
+            }
 
-          regiao(
-            context,
-            'Jardim São Paulo',
-            'Atenção',
-            Colors.orange.shade800,
-            '1,2 metros',
-            'Evite áreas próximas a rios e fique atento aos próximos avisos.',
-          ),
+            final regioes = snapshot.data ?? [];
 
-          regiao(
-            context,
-            'Av.Paulista',
-            'Alerta',
-            Colors.red,
-            '1,8 metros',
-            'Evite sair de casa se não for necessário. Procure locais seguros.',
-          ),
-
-          regiao(
-            context,
-            'Parque das Flores',
-            'Normal',
-            Colors.green.shade800,
-            '0,3 metros',
-            'A situação está normal. Continue acompanhando os avisos.',
-          ),
-
-          regiao(
-            context,
-            'Centro',
-            'Emergência',
-            Colors.red.shade900,
-            '2,5 metros',
-            'Afaste-se das áreas alagadas e procure um local seguro.',
-          ),
-        ],
+            return ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(16),
+              children: [
+                const Text(
+                  'Acompanhe os níveis de risco das regiões.',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF111827),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                if (regioes.isEmpty)
+                  const Text(
+                    'Nenhuma região cadastrada.',
+                    style: TextStyle(fontSize: 16, color: Color(0xFF1F2937)),
+                  ),
+                ...regioes.map((regiao) => _cartao(context, regiao)),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
 
-  Widget regiao(
-    BuildContext context,
-    String nome,
-    String risco,
-    Color cor,
-    String nivelAgua,
-    String orientacao,
-  ) {
+  Widget _cartao(BuildContext context, Regiao regiao) {
+    final risco = regiao.nivelRisco;
+
     return Card(
       color: Colors.white,
       margin: const EdgeInsets.only(bottom: 12),
@@ -89,16 +119,16 @@ class RegioesScreen extends StatelessWidget {
           size: 36,
         ),
         title: Text(
-          nome,
+          regiao.nome,
           style: const TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.bold,
             color: Color(0xFF111827),
           ),
         ),
-        subtitle: const Text(
-          'Dados simulados',
-          style: TextStyle(
+        subtitle: Text(
+          '${regiao.cidade} - ${regiao.uf}',
+          style: const TextStyle(
             fontSize: 16,
             height: 1.5,
             fontWeight: FontWeight.w500,
@@ -106,10 +136,10 @@ class RegioesScreen extends StatelessWidget {
           ),
         ),
         trailing: Text(
-          risco,
+          risco.rotulo,
           style: TextStyle(
             fontSize: 15,
-            color: cor,
+            color: risco.cor,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -117,12 +147,7 @@ class RegioesScreen extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => DetalheRegiaoScreen(
-                nome: nome,
-                risco: risco,
-                nivelAgua: nivelAgua,
-                orientacao: orientacao,
-              ),
+              builder: (context) => DetalheRegiaoScreen(regiao: regiao),
             ),
           );
         },
