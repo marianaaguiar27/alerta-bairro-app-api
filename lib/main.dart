@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'regioes_screen.dart';
 import 'alertas_screen.dart';
 import 'cadastro_screen.dart';
+import 'api/api_client.dart';
+import 'login_screen.dart';
 
 void main() {
   runApp(const AlertaBairroApp());
@@ -33,7 +35,7 @@ class AlertaBairroApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const CadastroScreen(),
+      home: const LoginScreen(),
 
       routes: {
         '/inicio': (context) => const HomeScreen(),
@@ -79,8 +81,8 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Olá, morador! 👋',
+             Text(
+              'Olá, ${ApiClient.instancia.sessao?.nome ?? 'morador'}! 👋',
               style: TextStyle(
                 fontSize: 25,
                 fontWeight: FontWeight.bold,
