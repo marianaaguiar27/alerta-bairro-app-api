@@ -11,6 +11,7 @@ import 'models/regiao.dart';
 import 'models/regiao_selecionada.dart';
 import 'regioes_screen.dart';
 import 'widgets/erro_com_retentativa.dart';
+import 'ocorrencias_screen.dart';
 
 class _DadosInicio {
   final List<Regiao> regioes;
@@ -196,13 +197,16 @@ class _HomeScreenState extends State<HomeScreen> {
           },
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
+        bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
         currentIndex: 0,
         onTap: (index) {
           if (index == 1) {
             _abrir(const RegioesScreen());
           } else if (index == 2) {
             _abrir(const AlertasScreen());
+          } else if (index == 3) {
+            _abrir(const OcorrenciasScreen());
           }
         },
         selectedItemColor: const Color(0xFF123B63),
@@ -213,6 +217,7 @@ class _HomeScreenState extends State<HomeScreen> {
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Início'),
           BottomNavigationBarItem(icon: Icon(Icons.location_on), label: 'Regiões'),
           BottomNavigationBarItem(icon: Icon(Icons.notifications), label: 'Alertas'),
+          BottomNavigationBarItem(icon: Icon(Icons.campaign), label: 'Ocorrências'),
         ],
       ),
     );
